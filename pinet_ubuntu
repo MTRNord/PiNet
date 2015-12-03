@@ -54,12 +54,12 @@ LegacyFixes() {
 	CheckDesktopShortcut
 	teacherSudoCheck
 	CheckRaspberryPiUIMods
-	ReplaceAnyTextOnLine /opt/ltsp/ubuntu/etc/lts.conf "NFS_HOME=/home" ""
+	ReplaceAnyTextOnLine /opt/ltsp/x86/etc/lts.conf "NFS_HOME=/home" ""
 	if [ -f "/etc/default/epoptes" ]; then
 		ReplaceTextLine "/etc/default/epoptes" "SOCKET_GROUP=staff" "SOCKET_GROUP=teacher"
 	fi
 	
-	if [ ! -f "/opt/ltsp/ubuntu/usr/local/bin/pinet-screenshot.sh" ]; then
+	if [ ! -f "/opt/ltsp/x86/usr/local/bin/pinet-screenshot.sh" ]; then
 		AddScreenshot
 		UpdateConfig NBDBuildNeeded true
 	fi
@@ -69,14 +69,14 @@ LegacyFixes() {
 		UpdateConfig NBDBuildNeeded true
 	fi
 	local passwdVersion=$(cat /home/$SUDO_USER/Desktop/pinet-password.desktop | sed -n '2p')
-	ReplaceAnyTextOnLine /opt/ltsp/ubuntu/etc/lts.conf REMOTE_APPS REMOTE_APPS=True
+	ReplaceAnyTextOnLine /opt/ltsp/x86/etc/lts.conf REMOTE_APPS REMOTE_APPS=True
 	exitcode=$?
-	sed -i '/^[[:blank:]]*$/d' /opt/ltsp/ubuntu/etc/lts.conf
+	sed -i '/^[[:blank:]]*$/d' /opt/ltsp/x86/etc/lts.conf
 	if [ "$exitcode" = "1" ]; then
 		UpdateConfig NBDBuildNeeded true
 	fi
 	
-	if [ -f "/opt/ltsp/ubuntu/usr/bin/scratch.old" ]; then
+	if [ -f "/opt/ltsp/x86/usr/bin/scratch.old" ]; then
 		echo "-------------------------------------------------------------------------------------------------"
 		echo $"NuScratch detected. It fails to work correctly with PiNet at this time, so I will remove it."
 		echo "-------------------------------------------------------------------------------------------------"
@@ -178,9 +178,9 @@ buildClient() {
 #wget http://archive.raspbian.org/raspbian.public.key -O - | gpg --import
 #gpg --export 90FDDD2E >> /etc/ltsp/raspbian.public.key.gpg
 
-rm /etc/ltsp/ltsp-ubuntu.conf
+rm /etc/ltsp/ltsp-x86.conf
 
-cat <<EOF > /etc/ltsp/ltsp-ubuntu.conf
+cat <<EOF > /etc/ltsp/ltsp-x86.conf
 #DEBOOTSTRAP_KEYRING=/etc/ltsp/raspbian.public.key.gpg
 DEBOOTSTRAP_KEYRING=none
 DIST=trusty
@@ -192,7 +192,7 @@ LOCALE="$LANG UTF-8"
 KERNEL_PACKAGES=linux-image-3.16.0-34-generic
 EOF
 
-VENDOR=Ubuntu ltsp-build-client --arch x86 --config /etc/ltsp/ltsp-ubuntu.conf
+VENDOR=Ubuntu ltsp-build-client --arch x86 --config /etc/ltsp/ltsp-x86.conf
 }
 
 
@@ -217,14 +217,14 @@ groupadd -g 2123 teacher
 configFixes() {
 #Configuration file changes required after the client is built. These are not once off as they reside inside the Raspberry Pi OS
 
-sed -i -e 's,/bin/plymouth quit --retain-splash.*,/bin/plymouth quit --retain-splash || true,g' /opt/ltsp/ubuntu/etc/init.d/ltsp-client-core
-echo 'LTSP_FATCLIENT=true' >> /opt/ltsp/ubuntu/etc/lts.conf
-#echo 'NFS_HOME=/home' >> /opt/ltsp/ubuntu/etc/lts.conf
+sed -i -e 's,/bin/plymouth quit --retain-splash.*,/bin/plymouth quit --retain-splash || true,g' /opt/ltsp/x86/etc/init.d/ltsp-client-core
+echo 'LTSP_FATCLIENT=true' >> /opt/ltsp/x86/etc/lts.conf
+#echo 'NFS_HOME=/home' >> /opt/ltsp/x86/etc/lts.conf
 
-cp '/opt/ltsp/ubuntu/etc/lts.conf' /var/lib/tftpboot/ltsp/ubuntu/lts.conf
+cp '/opt/ltsp/x86/etc/lts.conf' /var/lib/tftpboot/ltsp/x86/lts.conf
 
 
-printf 'snd-bcm2835\n' >> /opt/ltsp/ubuntu/etc/modules
+printf 'snd-bcm2835\n' >> /opt/ltsp/x86/etc/modules
 
 addSoundcardDefault
 
@@ -232,11 +232,11 @@ addSoundcardDefault
 
 addSoundcardDefault(){
 #Adds the soundcard settings for Raspbian
-grep -q mmap_emul "/opt/ltsp/ubuntu/etc/asound.conf" > /dev/null 2>&1
+grep -q mmap_emul "/opt/ltsp/x86/etc/asound.conf" > /dev/null 2>&1
 checkSound=$?
 #echo $checkSound
 if [ ! $checkSound = 1 ]; then
-cat <<\EOF1 > /opt/ltsp/ubuntu/etc/asound.conf
+cat <<\EOF1 > /opt/ltsp/x86/etc/asound.conf
 pcm.!default {
 type hw;
 card 0;
@@ -309,20 +309,20 @@ else
 		toReturn=0
 	fi
 fi
-if [ -d "/opt/ltsp/ubuntu/bootfiles" ]; then
+if [ -d "/opt/ltsp/x86/bootfiles" ]; then
 	local currentVersion=0
 	local newVersion=0
-	local currentVersion=$(head -n 1 "/opt/ltsp/ubuntu/bootfiles/version.txt")
+	local currentVersion=$(head -n 1 "/opt/ltsp/x86/bootfiles/version.txt")
 	local newVersion=$(head -n 1 "/opt/PiNet/PiBootBackup/version.txt")
 	if (( $currentVersion < $newVersion )); then 
-		rm -rf "/opt/ltsp/ubuntu/bootfiles/"
-		cp -rf "/opt/PiNet/PiBootBackup/" "/opt/ltsp/ubuntu/bootfiles/"
-		rm -rf "/opt/ltsp/ubuntu/bootfiles/cmdline.txt"
+		rm -rf "/opt/ltsp/x86/bootfiles/"
+		cp -rf "/opt/PiNet/PiBootBackup/" "/opt/ltsp/x86/bootfiles/"
+		rm -rf "/opt/ltsp/x86/bootfiles/cmdline.txt"
 		NBDRun
 	fi
 else
-	cp -rf "/opt/PiNet/PiBootBackup/" "/opt/ltsp/ubuntu/bootfiles/"
-	rm -rf "/opt/ltsp/ubuntu/bootfiles/cmdline.txt"
+	cp -rf "/opt/PiNet/PiBootBackup/" "/opt/ltsp/x86/bootfiles/"
+	rm -rf "/opt/ltsp/x86/bootfiles/cmdline.txt"
 	NBDRun
 	
 fi
@@ -394,9 +394,9 @@ service nbd-server restart
 FixRepo() {
 #Adds the repositories used by Raspbian. They public keys are included
 
-rm -rf /opt/ltsp/ubuntu/etc/apt/sources.list.d/ubuntu.list
-echo "deb http://de.archive.ubuntu.com/ubuntu trusty main restricted" > /opt/ltsp/ubuntu/etc/apt/sources.list.d/ubuntu.list
-ltsp-chroot --arch ubuntu apt-key add - <<EOF1
+rm -rf /opt/ltsp/x86/etc/apt/sources.list.d/ubuntu.list
+echo "deb http://de.archive.ubuntu.com/ubuntu trusty main restricted" > /opt/ltsp/x86/etc/apt/sources.list.d/ubuntu.list
+ltsp-chroot --arch x86 apt-key add - <<EOF1
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
@@ -429,9 +429,9 @@ m++/7s3K3L0zWopdhMVcgg6Nt9gcjzqN1c0gy55L/g==
 -----END PGP PUBLIC KEY BLOCK-----
 EOF1
 
-#rm -rf /opt/ltsp/ubuntu/etc/apt/sources.list.d/collabora.list
-#echo "deb http://raspberrypi.collabora.com wheezy rpi" > /opt/ltsp/ubuntu/etc/apt/sources.list.d/collabora.list
-ltsp-chroot --arch ubuntu apt-key add - <<EOF1
+#rm -rf /opt/ltsp/x86/etc/apt/sources.list.d/collabora.list
+#echo "deb http://raspberrypi.collabora.com wheezy rpi" > /opt/ltsp/x86/etc/apt/sources.list.d/collabora.list
+ltsp-chroot --arch x86 apt-key add - <<EOF1
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.13 (GNU/Linux)
 
@@ -487,15 +487,15 @@ HXWu9eprthyEIX6pmEhqzMViFix7FVozfdn2H4U=
 EOF1
 
 
-ltsp-chroot --arch ubuntu debconf-set-selections <<SELEOF
+ltsp-chroot --arch x86 debconf-set-selections <<SELEOF
 wolfram-engine shared/accepted-wolfram-eula boolean true
 SELEOF
 #Auto accepts wolfram eula
 
-echo deb http://de.archive.ubuntu.com/ubuntu trusty main restricted > /opt/ltsp/ubuntu/etc/apt/sources.list
+echo deb http://de.archive.ubuntu.com/ubuntu trusty main restricted > /opt/ltsp/x86/etc/apt/sources.list
 #Adds the repos to apt-get
 
-ltsp-chroot --arch ubuntu apt-get update
+ltsp-chroot --arch x86 apt-get update
 #Fetches most recent package lists
 
 }
@@ -516,8 +516,8 @@ read RESULT
 if [ "$RESULT" = "y" ]; then
 	echo "Updating software lists"
 	echo ""
-	ltsp-chroot --arch ubuntu apt-get update
-	ltsp-chroot --arch ubuntu apt-get -y install $INSTALLP
+	ltsp-chroot --arch x86 apt-get update
+	ltsp-chroot --arch x86 apt-get -y install $INSTALLP
 	if [ $? -eq 0 ]; then
 		UpdateConfig NBDBuildNeeded true
 		echo "-----------------------------"
@@ -552,7 +552,7 @@ read RESULT
 if [ "$RESULT" = "y" ]; then
 	echo "Attempting install with Python 2.7"
 	echo ""
-	ltsp-chroot --arch ubuntu pip-2.7 install $INSTALLP
+	ltsp-chroot --arch x86 pip-2.7 install $INSTALLP
 	if [ $? -eq 0 ]; then
 		UpdateConfig NBDBuildNeeded true
 		echo "-----------------------------"
@@ -569,7 +569,7 @@ if [ "$RESULT" = "y" ]; then
 	echo ""
 	echo "Attempting install with Python 3.2"
 	echo ""
-	ltsp-chroot --arch ubuntu pip-3.2 install $INSTALLP
+	ltsp-chroot --arch x86 pip-3.2 install $INSTALLP
 	if [ $? -eq 0 ]; then
 		UpdateConfig NBDBuildNeeded true
 		echo "-----------------------------"
@@ -602,12 +602,12 @@ RaspiTheme(){
 
 rm -rf pinet
 git clone --depth 1 $Repository.git
-cp -r pinet/themes/raspi /opt/ltsp/ubuntu/usr/share/ldm/themes/raspi
-rm /opt/ltsp/ubuntu/etc/alternatives/ldm-theme
-ln -s /usr/share/ldm/themes/raspi /opt/ltsp/ubuntu/etc/alternatives/ldm-theme
+cp -r pinet/themes/raspi /opt/ltsp/x86/usr/share/ldm/themes/raspi
+rm /opt/ltsp/x86/etc/alternatives/ldm-theme
+ln -s /usr/share/ldm/themes/raspi /opt/ltsp/x86/etc/alternatives/ldm-theme
 rm -rf pinet
-cp /opt/ltsp/ubuntu/usr/share/ldm/themes/raspi/bg.png /opt/ltsp/ubuntu/usr/share/images/desktop-base/pinet.png
-sudo ltsp-chroot --arch ubuntu update-alternatives --install /usr/share/images/desktop-base/desktop-background desktop-background /usr/share/images/desktop-base/pinet.png 100
+cp /opt/ltsp/x86/usr/share/ldm/themes/raspi/bg.png /opt/ltsp/x86/usr/share/images/desktop-base/pinet.png
+sudo ltsp-chroot --arch x86 update-alternatives --install /usr/share/images/desktop-base/desktop-background desktop-background /usr/share/images/desktop-base/pinet.png 100
 
 
 
@@ -621,7 +621,7 @@ if [ "$NBD" = "true" ]; then  #If NBD is enabled on the system overall
 		echo "--------------------------------------------------------"
 		echo $"Compressing the image, this will take roughly 5 minutes"
 		echo "--------------------------------------------------------"
-		ltsp-update-image /opt/ltsp/ubuntu  #If NBD is enabled, recompress the image
+		ltsp-update-image /opt/ltsp/x86  #If NBD is enabled, recompress the image
 		UpdateConfig NBDBuildNeeded false
 	else
 		whiptail --title $"WARNING" --msgbox $"Auto NBD compressing is disabled, for your changes to push to the Raspberry Pis, run NBD-recompress from main menu" 8 78
@@ -646,7 +646,7 @@ fi
 }
 
 EnableNBD() {
-	/usr/sbin/ltsp-update-image --config-nbd /opt/ltsp/ubuntu
+	/usr/sbin/ltsp-update-image --config-nbd /opt/ltsp/x86
     service nbd-server restart
 	UpdateConfig NBD true
 	UpdateConfig NBDuse true
@@ -664,40 +664,40 @@ AddSoftware(){
 
 # To add more software, just add it to the end of the list below taking a space after each program
 
-ltsp-chroot --arch ubuntu apt-get install -y idle idle3 python-dev nano python3-dev scratch python3-tk git debian-reference-en dillo python python-pygame python3-pygame python-tk sudo sshpass pcmanfm python3-numpy wget xpdf gtk2-engines alsa-utils wpagui omxplayer lxde net-tools mpg123
-ltsp-chroot --arch ubuntu apt-get install -y ssh locales less fbset sudo psmisc strace module-init-tools ifplugd ed ncdu console-setup keyboard-configuration debconf-utils parted unzip build-essential manpages-dev python bash-completion gdb pkg-config python-rpi.gpio v4l-utils lua5.1 luajit hardlink ca-certificates curl fake-hwclock ntp nfs-common usbutils libraspberrypi-dev libraspberrypi-doc libfreetype6-dev
-ltsp-chroot --arch ubuntu apt-get install -y python3-rpi.gpio python-rpi.gpio python-pip python3-pip python-picamera python3-picamera x2x wolfram-engine xserver-xorg-video-fbturbo netsurf-common netsurf-gtk rpi-update
-ltsp-chroot --arch ubuntu apt-get install -y ftp libraspberrypi-bin python3-pifacecommon python3-pifacedigitalio python3-pifacedigital-scratch-handler python-pifacecommon python-pifacedigitalio i2c-tools man-db
-ltsp-chroot --arch ubuntu apt-get install -y --no-install-recommends cifs-utils midori lxtask
-ltsp-chroot --arch ubuntu apt-get install -y minecraft-pi python-smbus python3-smbus dosfstools ruby iputils-ping scrot
-ltsp-chroot --arch ubuntu apt-get install -y gstreamer1.0-x gstreamer1.0-omx gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-alsa gstreamer1.0-libav
-ltsp-chroot --arch ubuntu apt-get install --no-install-recommends -y epiphany-browser cgroup-bin
-ltsp-chroot --arch ubuntu apt-get install -y -o Dpkg::Options::="--force-confnew" raspberrypi-net-mods
-ltsp-chroot --arch ubuntu apt-get install -y java-common oracle-java8-jdk apt-utils wpasupplicant wireless-tools firmware-atheros firmware-brcm80211 firmware-libertas firmware-ralink firmware-realtek libpng12-dev
-ltsp-chroot --arch ubuntu update-rc.d nfs-common disable
-ltsp-chroot --arch ubuntu update-rc.d rpcbind disable
-ltsp-chroot --arch ubuntu apt-get install -y linux-image-3.18.0-trunk-rpi linux-image-3.18.0-trunk-rpi2 linux-image-3.12-1-rpi linux-image-3.10-3-rpi linux-image-3.2.0-4-rpi linux-image-rpi-rpfv linux-image-rpi2-rpfv
-ltsp-chroot --arch ubuntu apt-get install -y chromium
-ltsp-chroot --arch ubuntu ln -sf /usr/bin/pip3 /usr/bin/pip-3.2
+ltsp-chroot --arch x86 apt-get install -y idle idle3 python-dev nano python3-dev scratch python3-tk git debian-reference-en dillo python python-pygame python3-pygame python-tk sudo sshpass pcmanfm python3-numpy wget xpdf gtk2-engines alsa-utils wpagui omxplayer lxde net-tools mpg123
+ltsp-chroot --arch x86 apt-get install -y ssh locales less fbset sudo psmisc strace module-init-tools ifplugd ed ncdu console-setup keyboard-configuration debconf-utils parted unzip build-essential manpages-dev python bash-completion gdb pkg-config python-rpi.gpio v4l-utils lua5.1 luajit hardlink ca-certificates curl fake-hwclock ntp nfs-common usbutils libraspberrypi-dev libraspberrypi-doc libfreetype6-dev
+ltsp-chroot --arch x86 apt-get install -y python3-rpi.gpio python-rpi.gpio python-pip python3-pip python-picamera python3-picamera x2x wolfram-engine xserver-xorg-video-fbturbo netsurf-common netsurf-gtk rpi-update
+ltsp-chroot --arch x86 apt-get install -y ftp libraspberrypi-bin python3-pifacecommon python3-pifacedigitalio python3-pifacedigital-scratch-handler python-pifacecommon python-pifacedigitalio i2c-tools man-db
+ltsp-chroot --arch x86 apt-get install -y --no-install-recommends cifs-utils midori lxtask
+ltsp-chroot --arch x86 apt-get install -y minecraft-pi python-smbus python3-smbus dosfstools ruby iputils-ping scrot
+ltsp-chroot --arch x86 apt-get install -y gstreamer1.0-x gstreamer1.0-omx gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-alsa gstreamer1.0-libav
+ltsp-chroot --arch x86 apt-get install --no-install-recommends -y epiphany-browser cgroup-bin
+ltsp-chroot --arch x86 apt-get install -y -o Dpkg::Options::="--force-confnew" raspberrypi-net-mods
+ltsp-chroot --arch x86 apt-get install -y java-common oracle-java8-jdk apt-utils wpasupplicant wireless-tools firmware-atheros firmware-brcm80211 firmware-libertas firmware-ralink firmware-realtek libpng12-dev
+ltsp-chroot --arch x86 update-rc.d nfs-common disable
+ltsp-chroot --arch x86 update-rc.d rpcbind disable
+ltsp-chroot --arch x86 apt-get install -y linux-image-3.18.0-trunk-rpi linux-image-3.18.0-trunk-rpi2 linux-image-3.12-1-rpi linux-image-3.10-3-rpi linux-image-3.2.0-4-rpi linux-image-rpi-rpfv linux-image-rpi2-rpfv
+ltsp-chroot --arch x86 apt-get install -y chromium
+ltsp-chroot --arch x86 ln -sf /usr/bin/pip3 /usr/bin/pip-3.2
 
-ltsp-chroot --arch ubuntu touch /boot/config.txt  #Required due to bug in sense-hat package installer
-ltsp-chroot --arch ubuntu apt-get install -y libjpeg-dev #Required due to a dependancy issue with pillow
-ltsp-chroot --arch ubuntu pip-3.2 install -U pillow #Install pillow which is required for Raspberry Pi Sense HAT on Python 3.
-ltsp-chroot --arch ubuntu apt-get install -y sense-hat
+ltsp-chroot --arch x86 touch /boot/config.txt  #Required due to bug in sense-hat package installer
+ltsp-chroot --arch x86 apt-get install -y libjpeg-dev #Required due to a dependancy issue with pillow
+ltsp-chroot --arch x86 pip-3.2 install -U pillow #Install pillow which is required for Raspberry Pi Sense HAT on Python 3.
+ltsp-chroot --arch x86 apt-get install -y sense-hat
 
-ltsp-chroot --arch ubuntu apt-get install -y libqt4-network #Remove this when Sonic-Pi 2 update fixing the dependency issue is released.
+ltsp-chroot --arch x86 apt-get install -y libqt4-network #Remove this when Sonic-Pi 2 update fixing the dependency issue is released.
 
-sudo DEBIAN_FRONTEND=noninteractive ltsp-chroot --arch ubuntu apt-get install -y sonic-pi
+sudo DEBIAN_FRONTEND=noninteractive ltsp-chroot --arch x86 apt-get install -y sonic-pi
 
-if [ ! -f /opt/ltsp/ubuntu/usr/local/bin/raspi2png ]; then
+if [ ! -f /opt/ltsp/x86/usr/local/bin/raspi2png ]; then
     wget https://github.com/AndrewFromMelbourne/raspi2png/blob/master/raspi2png?raw=true -O /tmp/raspi2png
-    cp -r /tmp/raspi2png /opt/ltsp/ubuntu/usr/local/bin/raspi2png
-    chmod 755 /opt/ltsp/ubuntu/usr/local/bin/raspi2png
+    cp -r /tmp/raspi2png /opt/ltsp/x86/usr/local/bin/raspi2png
+    chmod 755 /opt/ltsp/x86/usr/local/bin/raspi2png
 fi
 
 #Install Pygame Zero and gpiozero
-sudo ltsp-chroot --arch ubuntu pip install -U gpiozero
-sudo ltsp-chroot --arch ubuntu pip-3.2 install -U pgzero gpiozero
+sudo ltsp-chroot --arch x86 pip install -U gpiozero
+sudo ltsp-chroot --arch x86 pip-3.2 install -U pgzero gpiozero
 
 
 #Server software
@@ -712,15 +712,15 @@ apt-get install -y bindfs python3-feedparser ntp
 PiConfigFixes(){
 #Configuration changes to Raspberry Pi files, mostly to do with LXDE instead of Raspbian itself
 
-ltsp-chroot --arch ubuntu sed /etc/xdg/lxsession/LXDE/desktop.conf -i -e "s|sNet/ThemeName.*|sNet/ThemeName=Mist|"
-ltsp-chroot --arch ubuntu sed /etc/xdg/openbox/LXDE/rc.xml -i -e \
+ltsp-chroot --arch x86 sed /etc/xdg/lxsession/LXDE/desktop.conf -i -e "s|sNet/ThemeName.*|sNet/ThemeName=Mist|"
+ltsp-chroot --arch x86 sed /etc/xdg/openbox/LXDE/rc.xml -i -e \
 "s|<drawContents>yes</drawContents>|<drawContents>no</drawContents>|"
-ltsp-chroot --arch ubuntu apt-get install -y raspberrypi-artwork
-ltsp-chroot --arch ubuntu update-alternatives --install /usr/share/images/desktop-base/desktop-background desktop-background /usr/share/raspberrypi-artwork/raspberry-pi-logo.png 100
-ltsp-chroot --arch ubuntu PCMANFMCFG=/etc/xdg/pcmanfm/LXDE/pcmanfm.conf
-ltsp-chroot --arch ubuntu sed "$PCMANFMCFG" -i -e 's/^wallpaper_mode.*/wallpaper_mode=3/'
-ltsp-chroot --arch ubuntu sed "$PCMANFMCFG" -i -e 's/^desktop_bg.*/desktop_bg=#ffffff/'
-ltsp-chroot --arch ubuntu sed "$PCMANFMCFG" -i -e 's/^su_cmd.*/su_cmd=gksu %s/'
+ltsp-chroot --arch x86 apt-get install -y raspberrypi-artwork
+ltsp-chroot --arch x86 update-alternatives --install /usr/share/images/desktop-base/desktop-background desktop-background /usr/share/raspberrypi-artwork/raspberry-pi-logo.png 100
+ltsp-chroot --arch x86 PCMANFMCFG=/etc/xdg/pcmanfm/LXDE/pcmanfm.conf
+ltsp-chroot --arch x86 sed "$PCMANFMCFG" -i -e 's/^wallpaper_mode.*/wallpaper_mode=3/'
+ltsp-chroot --arch x86 sed "$PCMANFMCFG" -i -e 's/^desktop_bg.*/desktop_bg=#ffffff/'
+ltsp-chroot --arch x86 sed "$PCMANFMCFG" -i -e 's/^su_cmd.*/su_cmd=gksu %s/'
 }
 
 
@@ -729,9 +729,9 @@ EpoptesInstaller() {
 	apt-get update
 	apt-get install -y epoptes
     gpasswd -a root staff
-    ltsp-chroot --arch ubuntu apt-get update
-    ltsp-chroot --arch ubuntu apt-get install -y epoptes-client --no-install-recommends
-    ltsp-chroot --arch ubuntu epoptes-client -c 
+    ltsp-chroot --arch x86 apt-get update
+    ltsp-chroot --arch x86 apt-get install -y epoptes-client --no-install-recommends
+    ltsp-chroot --arch x86 epoptes-client -c 
     ReplaceTextLine "/etc/default/epoptes" "SOCKET_GROUP" "SOCKET_GROUP=teacher"
 }
 
@@ -831,7 +831,7 @@ AddUserToTeacher() {
 FixDesktopIcons(){
 #Adds all the correct desktop icons for PiNet
 rm -rf /etc/skel/Desktop
-cd /opt/ltsp/ubuntu/usr/share/applications
+cd /opt/ltsp/x86/usr/share/applications
 mkdir /etc/skel/Desktop
 sudo cp -a scratch.desktop idle.desktop idle3.desktop lxterminal.desktop debian-reference-common.desktop wolfram-mathematica.desktop epiphany-browser.desktop wolfram-language.desktop sonic-pi.desktop minecraft-pi.desktop /etc/skel/Desktop
 cd /etc/skel
@@ -949,10 +949,10 @@ whiptail --title $"WARNING" --yesno $"Would you like to give students access to 
 
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
-	rm -f /opt/ltsp/ubuntu/etc/sudoers.d/01pupil
-	touch /opt/ltsp/ubuntu/etc/sudoers.d/01pupil
-	chmod 440 /opt/ltsp/ubuntu/etc/sudoers.d/01pupil
-	echo '%pupil ALL=NOPASSWD: ALL' >> /opt/ltsp/ubuntu/etc/sudoers.d/01pupil
+	rm -f /opt/ltsp/x86/etc/sudoers.d/01pupil
+	touch /opt/ltsp/x86/etc/sudoers.d/01pupil
+	chmod 440 /opt/ltsp/x86/etc/sudoers.d/01pupil
+	echo '%pupil ALL=NOPASSWD: ALL' >> /opt/ltsp/x86/etc/sudoers.d/01pupil
 	UpdateConfig NBDBuildNeeded true
 fi
 }
@@ -1211,8 +1211,8 @@ SetupSambaServer(){
 
 SetupSambaPi(){
 #Unused
-	mkdir /opt/ltsp/ubuntu/media/school-share
-	ReplaceTextLine /opt/ltsp/ubuntu/etc/lts.conf FSTAB 'FSTAB_0="//server/School-Share  /media/school-share  cifs  guest,uid=1000,iocharset=utf8  0  0"'
+	mkdir /opt/ltsp/x86/media/school-share
+	ReplaceTextLine /opt/ltsp/x86/etc/lts.conf FSTAB 'FSTAB_0="//server/School-Share  /media/school-share  cifs  guest,uid=1000,iocharset=utf8  0  0"'
 	echo "file:///media/school-share School-Share" >>/tmp/.gtk-bookmarks
 	CopyToUsers /tmp/.gtk-bookmarks .gtk-bookmarks True False
 	rm -rf /tmp/.gtk-bookmarks
@@ -1310,7 +1310,7 @@ UpdateAll(){
 #Does a full system update on the server and on the Raspberry Pi OS
 	if [ $(checkInternet) -eq 0 ]; then
 		apt-get update && apt-get upgrade -y
-		ltsp-chroot --arch ubuntu apt-get update && apt-get upgrade -y
+		ltsp-chroot --arch x86 apt-get update && apt-get upgrade -y
 		AddSoftware
 		NBDRun
 		whiptail --title $"Update complete" --msgbox $"Updates are complete" 7 78
@@ -1325,7 +1325,7 @@ SetupSharedStandalone() {
 	mkdir /home/shared > /dev/null 2>&1
 	sudo chown :teacher /home/shared
 	sudo chmod 775 /home/shared
-	ReplaceTextLine /opt/ltsp/ubuntu/etc/lts.conf LOCAL_APPS_EXTRAMOUNTS 'LOCAL_APPS_EXTRAMOUNTS=/home/shared'	
+	ReplaceTextLine /opt/ltsp/x86/etc/lts.conf LOCAL_APPS_EXTRAMOUNTS 'LOCAL_APPS_EXTRAMOUNTS=/home/shared'	
 	
 }
 
@@ -1708,7 +1708,7 @@ AddPasswordReset(){
 #Adds the password reset utility to the desktop of new users
 	wget $RawRepository/$ReleaseBranch/Scripts/changePassword.sh -O /tmp/changePassword.sh
 	wget $RawRepository/$ReleaseBranch/images/pinet-change-password.png -O /tmp/pinet-change-password.png
-	cp /tmp/pinet-change-password.png /opt/ltsp/ubuntu/usr/share/pixmaps/pinet-change-password.png
+	cp /tmp/pinet-change-password.png /opt/ltsp/x86/usr/share/pixmaps/pinet-change-password.png
 	cp /tmp/changePassword.sh /usr/local/bin/changePassword.sh
 	cut -d: -f1,3 /etc/passwd | egrep ':[0-9]{4}$' | cut -d: -f1 | while IFS= read -r user
 	do
@@ -1756,9 +1756,9 @@ AddScreenshot(){
 #Adds the screenshot utility to the desktop of new users
 	wget $RawRepository/$ReleaseBranch/Scripts/pinet-screenshot.sh -O /tmp/pinet-screenshot.sh
 	wget $RawRepository/$ReleaseBranch/images/pinet-screenshot.png -O /tmp/pinet-screenshot.png
-	cp /tmp/pinet-screenshot.png /opt/ltsp/ubuntu/usr/share/pixmaps/pinet-screenshot.png
-	cp /tmp/pinet-screenshot.sh /opt/ltsp/ubuntu/usr/local/bin/pinet-screenshot.sh
-	chmod +x /opt/ltsp/ubuntu/usr/local/bin/pinet-screenshot.sh
+	cp /tmp/pinet-screenshot.png /opt/ltsp/x86/usr/share/pixmaps/pinet-screenshot.png
+	cp /tmp/pinet-screenshot.sh /opt/ltsp/x86/usr/local/bin/pinet-screenshot.sh
+	chmod +x /opt/ltsp/x86/usr/local/bin/pinet-screenshot.sh
 	cut -d: -f1,3 /etc/passwd | egrep ':[0-9]{4}$' | cut -d: -f1 | while IFS= read -r user
 	do
 		AddScreenshotDesktop $user
@@ -1882,12 +1882,12 @@ InstallScratchGPIO(){
 #Installs ScratchGPIO 5 by manually pushing an install script to each user
 	whiptail --title $"Note" --msgbox $"ScratchGPIO can't be directly installed, each user must install it. A desktop shortcut has been added to each user account called \"Install ScratchGPIO\". Get each student to run this the first time they want to use the software." 10 78
 	rm -rf /tmp/isgh7.sh
-	rm -rf /opt/ltsp/ubuntu/usr/local/bin/isgh5.sh
-	rm -rf /opt/ltsp/ubuntu/usr/local/bin/scratchSudo.sh
-	rm -rf /opt/ltsp/ubuntu/usr/local/bin/isgh7.sh
+	rm -rf /opt/ltsp/x86/usr/local/bin/isgh5.sh
+	rm -rf /opt/ltsp/x86/usr/local/bin/scratchSudo.sh
+	rm -rf /opt/ltsp/x86/usr/local/bin/isgh7.sh
 	wget http://bit.ly/1wxrqdp -O /tmp/isgh7.sh
-	cp /tmp/isgh7.sh  /opt/ltsp/ubuntu/usr/local/bin/isgh7.sh
-	echo "bash /usr/local/bin/isgh7.sh \$SUDO_USER" > /opt/ltsp/ubuntu/usr/local/bin/scratchSudo.sh
+	cp /tmp/isgh7.sh  /opt/ltsp/x86/usr/local/bin/isgh7.sh
+	echo "bash /usr/local/bin/isgh7.sh \$SUDO_USER" > /opt/ltsp/x86/usr/local/bin/scratchSudo.sh
 	cut -d: -f1,3 /etc/passwd | egrep ':[0-9]{4}$' | cut -d: -f1 | while IFS= read -r user
 	do
 	if [ ! -f "/home/$user/Desktop/Install-scratchGPIO.desktop" ]; then
@@ -1937,26 +1937,26 @@ fi
 
 DisableI2C_SPI(){
 #Disables both I2C and SPI to allow the pins to be used as general purpose IO
-	if [ ! -f /opt/ltsp/ubuntu/etc/modprobe.d/raspi-blacklist.conf ]; then
+	if [ ! -f /opt/ltsp/x86/etc/modprobe.d/raspi-blacklist.conf ]; then
 		echo "blacklist spi-bcm2708 
-blacklist i2c-bcm2708 " > /opt/ltsp/ubuntu/etc/modprobe.d/raspi-blacklist.conf
+blacklist i2c-bcm2708 " > /opt/ltsp/x86/etc/modprobe.d/raspi-blacklist.conf
 	UpdateConfig NBDBuildNeeded true
 	fi
 }
 
 DisableSPI(){
 #Disables SPI (and enables I2C) to allow the SPI pins to be used as general purpose IO
-	echo "blacklist spi-bcm2708" > /opt/ltsp/ubuntu/etc/modprobe.d/raspi-blacklist.conf
+	echo "blacklist spi-bcm2708" > /opt/ltsp/x86/etc/modprobe.d/raspi-blacklist.conf
 	UpdateConfig NBDBuildNeeded true
 }
 
 InstallBlueJ(){
 #Install BlueJ java IDE. Part of AddSoftware
 	rm -rf /tmp/bluej-314a.deb
-	rm -rf /opt/ltsp/ubuntu/tmp/bluej-314a.deb
+	rm -rf /opt/ltsp/x86/tmp/bluej-314a.deb
 	wget http://bluej.org/download/files/bluej-314a.deb -O /tmp/bluej-314a.deb
-	cp /tmp/bluej-314a.deb /opt/ltsp/ubuntu/tmp/bluej-314a.deb
-	ltsp-chroot --arch ubuntu dpkg -i /tmp/bluej-314a.deb
+	cp /tmp/bluej-314a.deb /opt/ltsp/x86/tmp/bluej-314a.deb
+	ltsp-chroot --arch x86 dpkg -i /tmp/bluej-314a.deb
 }
 
 checkPythonFunctionsInstalled(){
@@ -2015,20 +2015,20 @@ installKernelUpdater(){
 
 CheckRaspberryPiUIMods(){
 	
-	if [ ! -f "/opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/desktop-items-0.conf" ]; then
+	if [ ! -f "/opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/desktop-items-0.conf" ]; then
 		InstallRaspberryPiUIMods
 		UpdateConfig NBDBuildNeeded true
 		return
 	fi
 	
 	
-	$p checkIfFileContainsString "/opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/pcmanfm.conf" "raspberrypi-artwork"
+	$p checkIfFileContainsString "/opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/pcmanfm.conf" "raspberrypi-artwork"
 	exitstatus=$(gp)
 	if [ "$exitstatus" = "1" ]; then
 		InstallRaspberryPiUIMods
 		UpdateConfig NBDBuildNeeded true
 	else
-		$p checkIfFileContainsString "/opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/desktop-items-0.conf" "raspberrypi-artwork"
+		$p checkIfFileContainsString "/opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/desktop-items-0.conf" "raspberrypi-artwork"
 		exitstatus=$(gp)
 		if [ "$exitstatus" = "1" ]; then
 			InstallRaspberryPiUIMods
@@ -2040,11 +2040,11 @@ CheckRaspberryPiUIMods(){
 
 FixUIConfigFile(){
 	if [ $1 == "System" ]; then
-		$p replaceLineOrAdd /opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/$2 wallpaper_mode= wallpaper_mode=stretch
-		$p replaceLineOrAdd /opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/$2 wallpaper= wallpaper=/etc/alternatives/desktop-background
-		$p replaceLineOrAdd /opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/$2 side_pane_mode= side_pane_mode=1
-		$p replaceLineOrAdd /opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/$2 desktop_shadow= desktop_shadow=#000000
-		$p replaceLineOrAdd /opt/ltsp/ubuntu/etc/xdg/pcmanfm/LXDE-pi/$2 desktop_fg= desktop_fg=#ffffff
+		$p replaceLineOrAdd /opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/$2 wallpaper_mode= wallpaper_mode=stretch
+		$p replaceLineOrAdd /opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/$2 wallpaper= wallpaper=/etc/alternatives/desktop-background
+		$p replaceLineOrAdd /opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/$2 side_pane_mode= side_pane_mode=1
+		$p replaceLineOrAdd /opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/$2 desktop_shadow= desktop_shadow=#000000
+		$p replaceLineOrAdd /opt/ltsp/x86/etc/xdg/pcmanfm/LXDE-pi/$2 desktop_fg= desktop_fg=#ffffff
 	else
 		$p replaceLineOrAdd /home/$3/.config/pcmanfm/LXDE-pi/$2 wallpaper_mode= wallpaper_mode=stretch
 		$p replaceLineOrAdd /home/$3/.config/pcmanfm/LXDE-pi/$2 wallpaper= wallpaper=/etc/alternatives/desktop-background
@@ -2134,7 +2134,7 @@ ImportUsersFromCSV(){
 }
 
 CheckInstallSuccess(){
-	if [ -d "/opt/ltsp/ubuntu/debootstrap" ]; then
+	if [ -d "/opt/ltsp/x86/debootstrap" ]; then
 		whiptail --title $"Installation error" --msgbox $"An issue with your PiNet installation has been detected! The Raspbian operating system is missing or failed to install correctly. This most commonly is caused by school internet filters blocking software repositories or the internet connection failing in the middle of installation. At this stage it is higely recommended attempting a full (including Ubuntu) reinstall with if possible, a different internet connection. If that fails, contact support http://pinet.org.uk/articles/support.html" 14 78
 		exit
 	fi
@@ -2295,7 +2295,7 @@ case "$MENUEPT" in
 	ChooseReleaseChannel "Restart"
 	;;
 	Full-Install)
-	if [ -d /opt/ltsp/ubuntu ]; then
+	if [ -d /opt/ltsp/x86 ]; then
 		whiptail --title $"Error" --yesno $"An LTSP install has been detected.. Not recommended to continue. Should I continue?" 8 78
 	exitstatus=$?
 	if [ $exitstatus = 0 ]; then
@@ -2385,8 +2385,8 @@ case "$MENUEPT" in
 	Menu
     ;;
     Remove-epoptes)
-	ltsp-chroot --arch ubuntu apt-get remove -y epoptes-client
-    ltsp-chroot --arch ubuntu apt-get -y autoremove
+	ltsp-chroot --arch x86 apt-get remove -y epoptes-client
+    ltsp-chroot --arch x86 apt-get -y autoremove
     NBDRun
     whiptail --title $"Epoptes" --msgbox $"Epoptes has been removed from the pi image" 16 78
     Menu
@@ -2516,7 +2516,7 @@ case "$MENUEPT" in
     Menu
 	;;
 	Disable-Sudo)
-    rm -f /opt/ltsp/ubuntu/etc/sudoers.d/01pupil
+    rm -f /opt/ltsp/x86/etc/sudoers.d/01pupil
     NBDRun
     Menu
 	;;
@@ -2559,13 +2559,13 @@ if [ $(checkInternet) -eq 0 ]; then
 
 case "$MENUEPT" in
     Install-Libreoffice) 
-    ltsp-chroot --arch ubuntu apt-get purge -y openjdk-6-jre-headless openjdk-7-jre-headless ca-certificates-java
-    ltsp-chroot --arch ubuntu apt-get install -y libreoffice gcj-4.7-jre gcj-jre gcj-jre-headless libgcj13-awt
+    ltsp-chroot --arch x86 apt-get purge -y openjdk-6-jre-headless openjdk-7-jre-headless ca-certificates-java
+    ltsp-chroot --arch x86 apt-get install -y libreoffice gcj-4.7-jre gcj-jre gcj-jre-headless libgcj13-awt
     UpdateConfig NBDBuildNeeded true
     FinishedInstallingSoftware
     ;;
 	Install-Arduino) 
-    ltsp-chroot --arch ubuntu apt-get -y install arduino
+    ltsp-chroot --arch x86 apt-get -y install arduino
     UpdateConfig NBDBuildNeeded true
     FinishedInstallingSoftware
     ;;
@@ -2575,9 +2575,9 @@ case "$MENUEPT" in
 	FinishedInstallingSoftware
     ;;
     Install-Python-hardware) 
-		ltsp-chroot --arch ubuntu apt-get install python3-microstacknode
-		ltsp-chroot --arch ubuntu pip install pibrella skywriter unicornhat piglow pianohat explorerhat
-		ltsp-chroot --arch ubuntu pip-3.2 install pibrella unicornhat pianohat explorerhat
+		ltsp-chroot --arch x86 apt-get install python3-microstacknode
+		ltsp-chroot --arch x86 pip install pibrella skywriter unicornhat piglow pianohat explorerhat
+		ltsp-chroot --arch x86 pip-3.2 install pibrella unicornhat pianohat explorerhat
 		UpdateConfig NBDBuildNeeded true
 		FinishedInstallingSoftware
     ;;
@@ -2624,7 +2624,7 @@ FullInstall(){
 		buildClient   #Creates config file to build Raspbian with LTSP and builds it
 		OneTimeFixes   #Runs some one off config changes, these are not repeated at any time later
 		#PiConfigFixes   #Adds configuration changes to LXDE and installs Raspi artwork
-		configFixes   #Main configuration changes that are run on the the LTSP chroot (/opt/ltsp/ubuntu). These must be run every time the image is generated
+		configFixes   #Main configuration changes that are run on the the LTSP chroot (/opt/ltsp/x86). These must be run every time the image is generated
 		FixRepo   #Adds additional repositories to the Raspbian build
 		AddSoftware   #Adds all the custom software on top of a normal Armhf Debian Wheezy build
 		RaspiTheme   #Installs the PiNet theme which can be seen at login
@@ -2704,8 +2704,8 @@ Rebuild-OS)
 	exitstatus=$?
 	if [ $exitstatus = 0 ]; then
 		if [ $(checkInternet) -eq 0 ]; then
-    		rm -rf /opt/ltsp/ubuntu
-    		rm -rf /var/lib/tftpboot/ltsp/ubuntu
+    		rm -rf /opt/ltsp/x86
+    		rm -rf /var/lib/tftpboot/ltsp/x86
 				$p initialInstallSoftwareList
     		buildClient
     		configFixes
@@ -2808,7 +2808,7 @@ checkPythonFunctionsInstalled  #Checks the supporting Python functions are insta
 CheckForRaspiLTSP
 
 
-if [ ! -d /opt/ltsp/ubuntu ]; then
+if [ ! -d /opt/ltsp/x86 ]; then
     	whiptail --title $"Welcome" --yesno $"Welcome to PiNet. We have detected PiNet is not installed, would you like to run the full install?" 8 78 
 		exitstatus=$?
 		if [ $exitstatus = 0 ]; then
